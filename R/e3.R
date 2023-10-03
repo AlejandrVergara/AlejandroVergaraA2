@@ -27,7 +27,7 @@ sample.index <- sample(1:nrow(data_estratificada)
                        ,nrow(data_estratificada)*0.7
                        ,replace = F)
 
-k <- 43
+k <- 3
 predictors <- c("HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth", "PhysHlth", "DiffWalk", "Sex", "Age", "Education", "Income")
 
 # Original data
@@ -44,8 +44,26 @@ prediction <- knn(
   k = k)
 
 
-library(gmodels)
+ctrl <- trainControl(method = "cv", p = 0.7)
 
-CrossTable(x = test.data$Diabetes_012, y = prediction
-           , prop.chisq = F)
+# Entrenar el modelo KNN con normalización min-max
+knnFit <- train(
+  formula = as.formula(paste(class_variable, "~", paste(predictors, collapse = "+"))),
+  data = train.data,
+  method = "knn",
+  trControl = ctrl,
+  preProcess = c("range"),  # Normalización min-max
+  tuneLength = 20
+)
 
+# Imprimir el resultado del modelo KNN
+knnFit
+
+# Realizar un gráfico para visualizar el rendimiento
+plot(knnFit)
+
+# Obtener predicciones para los datos de prueba
+knnPredict <- predict(knnFit, newdata = test.data)
+
+# Obtener la matriz de confusión para evaluar la precisión y otros parámetros
+confusionMatrix(knnPredict, test.data[, class_variable])
