@@ -1,5 +1,7 @@
 library(tidyverse)
 library(caret)
+library(class)
+library(gmodels)
 folder<-dirname(rstudioapi::getSourceEditorContext()$path)
 
 parentFolder <-dirname(folder)
@@ -27,43 +29,190 @@ sample.index <- sample(1:nrow(data_estratificada)
                        ,nrow(data_estratificada)*0.7
                        ,replace = F)
 
-k <- 3
+### Modelos para hallar la Diabetes
+
 predictors <- c("HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth", "PhysHlth", "DiffWalk", "Sex", "Age", "Education", "Income")
 
 # Original data
 train.data <- data_estratificada[sample.index, c(predictors, "Diabetes_012"), drop = FALSE]
 test.data <- data_estratificada[-sample.index, c(predictors, "Diabetes_012"), drop = FALSE]
 
-library(class)
-
-# Entrenamiento y predicción
-prediction <- knn(
-  train = train.data[predictors],
-  test = test.data[predictors],
-  cl = train.data$Diabetes_012,
-  k = k)
 
 
+train.data$Diabetes_012 <- factor(train.data$Diabetes_012)
+test.data$Diabetes_012 <- factor(test.data$Diabetes_012)
+
+# Entrena el modelo de k-NN
 ctrl <- trainControl(method = "cv", p = 0.7)
+knnFit <- train(Diabetes_012 ~ .
+                , data = train.data
+                , method = "knn", trControl = ctrl
+                , preProcess = c("range") # c("center", "scale") for z-score
+                , tuneLength = 20)
 
-# Entrenar el modelo KNN con normalización min-max
-knnFit <- train(
-  formula = as.formula(paste(class_variable, "~", paste(predictors, collapse = "+"))),
-  data = train.data,
-  method = "knn",
-  trControl = ctrl,
-  preProcess = c("range"),  # Normalización min-max
-  tuneLength = 20
-)
-
-# Imprimir el resultado del modelo KNN
 knnFit
 
-# Realizar un gráfico para visualizar el rendimiento
 plot(knnFit)
 
-# Obtener predicciones para los datos de prueba
+# Realiza las predicciones
 knnPredict <- predict(knnFit, newdata = test.data)
 
-# Obtener la matriz de confusión para evaluar la precisión y otros parámetros
-confusionMatrix(knnPredict, test.data[, class_variable])
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data$Diabetes_012)
+library(gmodels)
+
+CrossTable(x = test.data$Diabetes_012,  y = knnPredict,
+           prop.chisq = F)
+
+
+### segundo Modelo
+
+predictors_to_remove <- c("AnyHealthcare", "NoDocbcCost", "DiffWalk", "Education", "Income")
+train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
+test.data2 <- test.data[, !(names(test.data) %in% predictors_to_remove)]
+
+
+ctrl <- trainControl(method = "cv", number = 5)
+knnFit2 <- train(Diabetes_012 ~ .
+                 , data = train.data2
+                 , method = "knn", trControl = ctrl
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit2
+
+plot(knnFit2)
+
+# Realiza las predicciones
+knnPredict2 <- predict(knnFit2, newdata = test.data2)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data2$Diabetes_012)
+library(gmodels)
+
+CrossTable(x = test.data2$Diabetes_012, y = knnPredict2
+           , prop.chisq = F)
+
+### Tercer Modelo
+
+predictors_to_remove2 <- c("ChoclCheck", "MentHlth","PhysHlth", "Fruits", "Veggies")
+train.data3 <- train.data2[, !(names(train.data2) %in% predictors_to_remove2)]
+test.data3 <- test.data2[, !(names(test.data2) %in% predictors_to_remove2)]
+
+
+ctrl2 <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+knnFit3 <- train(Diabetes_012 ~ .
+                 , data = train.data3
+                 , method = "knn", trControl = ctrl2
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit3
+
+plot(knnFit3)
+
+# Realiza las predicciones
+knnPredict3 <- predict(knnFit3, newdata = test.data2)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data2$Diabetes_012)
+library(gmodels)
+
+CrossTable(x = test.data2$Diabetes_012, y = knnPredict3
+           , prop.chisq = F)
+
+
+
+### HeartDiseaseorAttack
+
+## selección de 100 muestras de cada factor del dataset ##
+data_estratificada <- data %>%
+  group_by(HeartDiseaseorAttack) %>%
+  sample_n(1500, replace = TRUE) %>%
+  ungroup()
+
+predictors <- c("HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "Diabetes_012", "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth", "PhysHlth", "DiffWalk", "Sex", "Age", "Education", "Income")
+
+# Original data
+train.data <- data_estratificada[sample.index, c(predictors, "HeartDiseaseorAttack"), drop = FALSE]
+test.data <- data_estratificada[-sample.index, c(predictors, "HeartDiseaseorAttack"), drop = FALSE]
+
+train.data$HeartDiseaseorAttack <- factor(train.data$HeartDiseaseorAttack)
+test.data$HeartDiseaseorAttack <- factor(test.data$HeartDiseaseorAttack)
+
+# Entrena el modelo de k-NN
+ctrl <- trainControl(method = "cv", p = 0.7)
+knnFit <- train(HeartDiseaseorAttack ~ .
+                , data = train.data
+                , method = "knn", trControl = ctrl
+                , preProcess = c("range") # c("center", "scale") for z-score
+                , tuneLength = 20)
+
+knnFit
+
+plot(knnFit)
+
+# Realiza las predicciones
+knnPredict <- predict(knnFit, newdata = test.data)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data$HeartDiseaseorAttack)
+
+
+CrossTable(x = test.data$HeartDiseaseorAttack,  y = knnPredict,
+           prop.chisq = F)
+
+predictors_to_remove <- c("AnyHealthcare", "NoDocbcCost", "DiffWalk", "Education", "Income")
+train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
+test.data2 <- test.data[, !(names(test.data) %in% predictors_to_remove)]
+
+
+ctrl <- trainControl(method = "cv", number = 5)
+knnFit2 <- train(HeartDiseaseorAttack ~ .
+                 , data = train.data2
+                 , method = "knn", trControl = ctrl
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit2
+
+plot(knnFit2)
+
+# Realiza las predicciones
+knnPredict2 <- predict(knnFit2, newdata = test.data2)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data2$HeartDiseaseorAttack)
+library(gmodels)
+
+CrossTable(x = test.data2$HeartDiseaseorAttack, y = knnPredict2
+           , prop.chisq = F)
+
+### Tercer Modelo
+
+predictors_to_remove2 <- c("ChoclCheck", "MentHlth","HvyAlcoholConsump", "Fruits", "Veggies")
+train.data3 <- train.data2[, !(names(train.data2) %in% predictors_to_remove2)]
+test.data3 <- test.data2[, !(names(test.data2) %in% predictors_to_remove2)]
+
+
+ctrl2 <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+knnFit3 <- train(HeartDiseaseorAttack ~ .
+                 , data = train.data3
+                 , method = "knn", trControl = ctrl2
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit3
+
+plot(knnFit3)
+
+# Realiza las predicciones
+knnPredict3 <- predict(knnFit3, newdata = test.data2)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data2$HeartDiseaseorAttack)
+library(gmodels)
+
+CrossTable(x = test.data2$HeartDiseaseorAttack, y = knnPredict3
+           , prop.chisq = F)
+
