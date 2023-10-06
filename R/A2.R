@@ -112,13 +112,13 @@ knnFit3
 plot(knnFit3)
 
 # Realiza las predicciones
-knnPredict3 <- predict(knnFit3, newdata = test.data2)
+knnPredict3 <- predict(knnFit3, newdata = test.data3)
 
 # Crea la matriz de confusión
-confusionMatrix(data = knnPredict, reference = test.data2$Diabetes_012)
+confusionMatrix(data = knnPredict3, reference = test.data3$Diabetes_012)
 library(gmodels)
 
-CrossTable(x = test.data2$Diabetes_012, y = knnPredict3
+CrossTable(x = test.data3$Diabetes_012, y = knnPredict3
            , prop.chisq = F)
 
 
@@ -161,6 +161,7 @@ confusionMatrix(data = knnPredict, reference = test.data$HeartDiseaseorAttack)
 
 CrossTable(x = test.data$HeartDiseaseorAttack,  y = knnPredict,
            prop.chisq = F)
+### segundo modelo
 
 predictors_to_remove <- c("AnyHealthcare", "NoDocbcCost", "DiffWalk", "Education", "Income")
 train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
@@ -207,12 +208,105 @@ knnFit3
 plot(knnFit3)
 
 # Realiza las predicciones
-knnPredict3 <- predict(knnFit3, newdata = test.data2)
+knnPredict3 <- predict(knnFit3, newdata = test.data3)
 
 # Crea la matriz de confusión
-confusionMatrix(data = knnPredict, reference = test.data2$HeartDiseaseorAttack)
+confusionMatrix(data = knnPredict, reference = test.data3$HeartDiseaseorAttack)
 library(gmodels)
 
-CrossTable(x = test.data2$HeartDiseaseorAttack, y = knnPredict3
+CrossTable(x = test.data3$HeartDiseaseorAttack, y = knnPredict3
+           , prop.chisq = F)
+####
+
+
+## selección de 100 muestras de cada factor del dataset ##
+data_estratificada <- data %>%
+  group_by(Sex) %>%
+  sample_n(1500, replace = TRUE) %>%
+  ungroup()
+
+predictors <- c("HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "HeartDiseaseorAttack" ,"Diabetes_012", "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth", "PhysHlth", "DiffWalk", "Age", "Education", "Income")
+
+# Original data
+train.data <- data_estratificada[sample.index, c(predictors, "Sex"), drop = FALSE]
+test.data <- data_estratificada[-sample.index, c(predictors, "Sex"), drop = FALSE]
+
+train.data$Sex <- factor(train.data$Sex)
+test.data$Sex <- factor(test.data$Sex)
+
+# Entrena el modelo de k-NN
+ctrl <- trainControl(method = "cv", p = 0.7)
+knnFit <- train(Sex ~ .
+                , data = train.data
+                , method = "knn", trControl = ctrl
+                , preProcess = c("range") # c("center", "scale") for z-score
+                , tuneLength = 20)
+
+knnFit
+
+plot(knnFit)
+
+# Realiza las predicciones
+knnPredict <- predict(knnFit, newdata = test.data)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict, reference = test.data$Sex)
+
+
+CrossTable(x = test.data$Sex,  y = knnPredict,
+           prop.chisq = F)
+### segundo modelo
+
+predictors_to_remove <- c("AnyHealthcare", "NoDocbcCost", "DiffWalk", "Age", "PhysActivity")
+train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
+test.data2 <- test.data[, !(names(test.data) %in% predictors_to_remove)]
+
+
+ctrl <- trainControl(method = "cv", number = 5)
+knnFit2 <- train(Sex ~ .
+                 , data = train.data2
+                 , method = "knn", trControl = ctrl
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit2
+
+plot(knnFit2)
+
+# Realiza las predicciones
+knnPredict2 <- predict(knnFit2, newdata = test.data2)
+
+# Crea la matriz de confusión
+  confusionMatrix(data = knnPredict2, reference = test.data2$Sex)
+
+
+CrossTable(x = test.data2$HeartDiseaseorAttack, y = knnPredict2
            , prop.chisq = F)
 
+### Tercer Modelo
+
+predictors_to_remove2 <- c("ChoclCheck", "MentHlth","HvyAlcoholConsump", "Fruits", "Veggies")
+train.data3 <- train.data2[, !(names(train.data2) %in% predictors_to_remove2)]
+test.data3 <- test.data2[, !(names(test.data2) %in% predictors_to_remove2)]
+
+
+ctrl2 <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+knnFit3 <- train(Sex ~ .
+                 , data = train.data3
+                 , method = "knn", trControl = ctrl2
+                 , preProcess = c("range") # c("center", "scale") for z-score
+                 , tuneLength = 20)
+
+knnFit3
+
+plot(knnFit3)
+
+# Realiza las predicciones
+knnPredict3 <- predict(knnFit3, newdata = test.data3)
+
+# Crea la matriz de confusión
+confusionMatrix(data = knnPredict3, reference = test.data3$Sex)
+
+
+CrossTable(x = test.data3$Sex, y = knnPredict3
+           , prop.chisq = F)
