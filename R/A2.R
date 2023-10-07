@@ -2,6 +2,7 @@ library(tidyverse)
 library(caret)
 library(class)
 library(gmodels)
+library(psych)
 folder<-dirname(rstudioapi::getSourceEditorContext()$path)
 
 parentFolder <-dirname(folder)
@@ -19,13 +20,13 @@ data_estratificada <- data %>%
 
 summary(data_estratificada)
 
-library(psych)
+
 pairs.panels(data_estratificada[c("Age", "BMI", "HighBP", "Education")],
              pch = 21,
              bg = c("red", "green3", "blue", "orange" , "yellow")[unclass(data_estratificada$GenHlth)])
 
-
-sample.index <- sample(1:nrow(data_estratificada)
+samp
+le.index <- sample(1:nrow(data_estratificada)
                        ,nrow(data_estratificada)*0.7
                        ,replace = F)
 
@@ -59,7 +60,6 @@ knnPredict <- predict(knnFit, newdata = test.data)
 
 # Crea la matriz de confusión
 confusionMatrix(data = knnPredict, reference = test.data$Diabetes_012)
-library(gmodels)
 
 CrossTable(x = test.data$Diabetes_012,  y = knnPredict,
            prop.chisq = F)
@@ -87,8 +87,7 @@ plot(knnFit2)
 knnPredict2 <- predict(knnFit2, newdata = test.data2)
 
 # Crea la matriz de confusión
-confusionMatrix(data = knnPredict, reference = test.data2$Diabetes_012)
-library(gmodels)
+confusionMatrix(data = knnPredict2, reference = test.data2$Diabetes_012)
 
 CrossTable(x = test.data2$Diabetes_012, y = knnPredict2
            , prop.chisq = F)
@@ -116,7 +115,6 @@ knnPredict3 <- predict(knnFit3, newdata = test.data3)
 
 # Crea la matriz de confusión
 confusionMatrix(data = knnPredict3, reference = test.data3$Diabetes_012)
-library(gmodels)
 
 CrossTable(x = test.data3$Diabetes_012, y = knnPredict3
            , prop.chisq = F)
@@ -183,8 +181,8 @@ plot(knnFit2)
 knnPredict2 <- predict(knnFit2, newdata = test.data2)
 
 # Crea la matriz de confusión
-confusionMatrix(data = knnPredict, reference = test.data2$HeartDiseaseorAttack)
-library(gmodels)
+confusionMatrix(data = knnPredict2, reference = test.data2$HeartDiseaseorAttack)
+
 
 CrossTable(x = test.data2$HeartDiseaseorAttack, y = knnPredict2
            , prop.chisq = F)
@@ -211,8 +209,8 @@ plot(knnFit3)
 knnPredict3 <- predict(knnFit3, newdata = test.data3)
 
 # Crea la matriz de confusión
-confusionMatrix(data = knnPredict, reference = test.data3$HeartDiseaseorAttack)
-library(gmodels)
+confusionMatrix(data = knnPredict3, reference = test.data3$HeartDiseaseorAttack)
+
 
 CrossTable(x = test.data3$HeartDiseaseorAttack, y = knnPredict3
            , prop.chisq = F)
@@ -310,3 +308,17 @@ confusionMatrix(data = knnPredict3, reference = test.data3$Sex)
 
 CrossTable(x = test.data3$Sex, y = knnPredict3
            , prop.chisq = F)
+#### 3 point
+### Model of BMI
+data_estratificada2<- data[sample(nrow(data), 3000), ]
+
+predictors <- colnames(data_estratificada2)[-c(7, which(names(data_estratificada2) == "BMI"))]
+sample.index <- sample(1:nrow(data_estratificada2)
+                       ,nrow(data_estratificada2)*0.7
+                       ,replace = F)
+train.data <- data_estratificada2 [sample.index,c(predictors,"BMI"),drop=F]
+test.data <- data_estratificada2[-sample.index,c(predictors,"BMI"),drop=F]
+ins_model <- lm(BMI ~ .,data= train.data[, c(predictors, "BMI")])
+ins_model
+
+summary(ins_model)
