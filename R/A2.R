@@ -310,15 +310,29 @@ CrossTable(x = test.data3$Sex, y = knnPredict3
            , prop.chisq = F)
 #### 3 point
 ### Model of BMI
-data_estratificada2<- data[sample(nrow(data), 3000), ]
 
-predictors <- colnames(data_estratificada2)[-c(7, which(names(data_estratificada2) == "BMI"))]
-sample.index <- sample(1:nrow(data_estratificada2)
-                       ,nrow(data_estratificada2)*0.7
-                       ,replace = F)
-train.data <- data_estratificada2 [sample.index,c(predictors,"BMI"),drop=F]
-test.data <- data_estratificada2[-sample.index,c(predictors,"BMI"),drop=F]
-ins_model <- lm(BMI ~ .,data= train.data[, c(predictors, "BMI")])
-ins_model
+data_estratificada2 <- data[sample(nrow(data), 3000), ]
+
+predictors <- colnames(data_estratificada2)[-5]
+sample.index <- sample(1:nrow(data_estratificada2),
+                       nrow(data_estratificada2) * 0.7,
+                       replace = FALSE)
+
+### ENTRENAMIENTO
+train.data <- data_estratificada2[sample.index, c(predictors, "BMI"), drop = FALSE]
+test.data <- data_estratificada2[-sample.index, c(predictors, "BMI"), drop = FALSE]
+ins_model <- lm(BMI ~ ., data = train.data)
+
+
+
 
 summary(ins_model)
+### segundo modelo
+
+set.seed(1)
+train.control <- trainControl(method = "cv", number = 10 ,p = 0.7)
+# Train the model
+model <- train(BMI ~ ., data = data_estratificada2, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
