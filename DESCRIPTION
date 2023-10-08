@@ -1,11 +1,13 @@
 Package: AlejandroVergaraA2
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Title: kNN, Linear regression, and multilinear regression
+Version: 0.1.2
+Author: person  ("ALEJANDRO" "Vergara", email= Josea.vergarar@ecci.edi.co)
+Maintainer: The package maintainer "ALEJANDRO" "Vergara"
+Description: we will analyze the results after using the KNN, linear regression and Multilinear regression
+models, using the “diabetes_012_health_indicators_BRFSS2015.csv” dataset, in order to choose the best
+model according to the indications or requirements of the exercises.
+
+License: "use_mit_license"
 Encoding: UTF-8
 LazyData: true
