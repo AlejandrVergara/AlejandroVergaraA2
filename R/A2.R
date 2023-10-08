@@ -310,7 +310,15 @@ CrossTable(x = test.data3$Sex, y = knnPredict3
            , prop.chisq = F)
 #### 3 point
 ### Model of BMI
+folder<-dirname(rstudioapi::getSourceEditorContext()$path)
 
+parentFolder <-dirname(folder)
+
+data <-
+  read.csv(paste0(parentFolder,"/Dataset/diabetes_012.csv"))
+
+data$Diabetes_012 <- ifelse(data$Diabetes_012 == 0, 0, 1)
+set.seed(1)
 data_estratificada2 <- data[sample(nrow(data), 3000), ]
 
 predictors <- colnames(data_estratificada2)[-5]
@@ -321,6 +329,8 @@ sample.index <- sample(1:nrow(data_estratificada2),
 ### ENTRENAMIENTO
 train.data <- data_estratificada2[sample.index, c(predictors, "BMI"), drop = FALSE]
 test.data <- data_estratificada2[-sample.index, c(predictors, "BMI"), drop = FALSE]
+
+
 ins_model <- lm(BMI ~ ., data = train.data)
 
 
@@ -329,10 +339,50 @@ ins_model <- lm(BMI ~ ., data = train.data)
 summary(ins_model)
 ### segundo modelo
 
-set.seed(1)
-train.control <- trainControl(method = "cv", number = 10 ,p = 0.7)
+
+train.control <- trainControl(method = "cv", number = 10 )
 # Train the model
-model <- train(BMI ~ ., data = data_estratificada2, method = "lm",
+model <- train(BMI ~ ., data = train.data, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
+
+#### segundo
+predictors_to_remove <- c("AnyHealthcare", "CholCheck", "MentHlth", "Education", "Sex")
+
+train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
+test.data2 <- test.data[, !(names(test.data) %in% predictors_to_remove)]
+
+ins_model <- lm(BMI ~ ., data = train.data2)
+
+
+summary(ins_model)
+### segundo modelo
+
+
+train.control <- trainControl(method = "cv", number = 5)
+# Train the model
+model <- train(BMI ~ ., data = train.data2, method = "lm",
+               trControl = train.control)
+# Summarize the results
+print(model)
+
+#### Tercero
+predictors_to_remove <- c("Income", "Stroke", "NoDocbcCost", "Veggies", "HvyAlcoholConsump")
+
+train.data3 <- train.data2[, !(names(train.data2) %in% predictors_to_remove)]
+test.data3 <- test.data2[, !(names(test.data2) %in% predictors_to_remove)]
+
+ins_model <- lm(BMI ~ ., data = train.data3)
+
+
+summary(ins_model)
+### segundo modelo
+
+
+train.control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+# Train the model
+model <- train(BMI ~ ., data = train.data3, method = "lm",
                trControl = train.control)
 # Summarize the results
 print(model)
