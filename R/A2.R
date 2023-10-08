@@ -10,25 +10,34 @@ data <-
   read.csv(paste0(parentFolder,"/Dataset/diabetes_012.csv"))
 
 data$Diabetes_012 <- ifelse(data$Diabetes_012 == 0, 0, 1)
+set.seed(1)
+data_ <- data[sample(nrow(data), 3000), ]
+
+table(data_$Sex)
+table(data_$Smoker)
+table(data_$CholCheck)
+
+
+pairs.panels(data_ [c("Age", "BMI", "Education", "GenHlth")],
+             pch = 21,
+             bg = c("red", "green3", "blue", "orange" , "yellow")[unclass(data_$Diabetes_012)])
+
+
+### KNN Models and Experiments to Find Diabetes #####################################################################
+
 
 ## selection of 1500 samples of each factor of the dataset
+set.seed(1)
 data_estratificada <- data %>%
   group_by(Diabetes_012) %>%
   sample_n(1500, replace = TRUE) %>%
   ungroup()
 
-summary(data_estratificada)
-
-
-pairs.panels(data_estratificada[c("Age", "BMI", "HighBP", "Education")],
-             pch = 21,
-             bg = c("red", "green3", "blue", "orange" , "yellow")[unclass(data_estratificada$Diabetes_012)])
 
 sample.index <- sample(1:nrow(data_estratificada)
                        ,nrow(data_estratificada)*0.7
                        ,replace = F)
 
-### KNN Models and Experiments to Find Diabetes #####################################################################
 
 predictors <- c("HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "HeartDiseaseorAttack", "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", "GenHlth", "MentHlth", "PhysHlth", "DiffWalk", "Sex", "Age", "Education", "Income")
 
@@ -46,7 +55,7 @@ knnFit <- train(Diabetes_012 ~ .
                 , data = train.data
                 , method = "knn", trControl = ctrl
                 , preProcess = c("range") # c("center", "scale") for z-score
-                , tuneLength = 20)
+                , tuneLength = 50)
 
 plot(knnFit)
 
@@ -55,9 +64,6 @@ knnPredict <- predict(knnFit, newdata = test.data)
 
 # Creates the confusion matrix
 confusionMatrix(data = knnPredict, reference = test.data$Diabetes_012)
-
-CrossTable(x = test.data$Diabetes_012,  y = knnPredict,
-           prop.chisq = F)
 
 
 ### second Model
@@ -82,8 +88,7 @@ knnPredict2 <- predict(knnFit2, newdata = test.data2)
 # Creates the confusion matrix
 confusionMatrix(data = knnPredict2, reference = test.data2$Diabetes_012)
 
-CrossTable(x = test.data2$Diabetes_012, y = knnPredict2
-           , prop.chisq = F)
+
 
 ### Third Model
 
@@ -106,13 +111,13 @@ knnPredict3 <- predict(knnFit3, newdata = test.data3)
 # Creates the confusion matrix
 confusionMatrix(data = knnPredict3, reference = test.data3$Diabetes_012)
 
-CrossTable(x = test.data3$Diabetes_012, y = knnPredict3
-           , prop.chisq = F)
+
 
 
 ###KNN Models and Experiments to Find HeartDiseaseorAttack #####################################################################
 
 ## selection of 1500 samples of each factor of the dataset#
+set.seed(1)
 data_estratificada <- data %>%
   group_by(HeartDiseaseorAttack) %>%
   sample_n(1500, replace = TRUE) %>%
@@ -133,7 +138,7 @@ knnFit <- train(HeartDiseaseorAttack ~ .
                 , data = train.data
                 , method = "knn", trControl = ctrl
                 , preProcess = c("range") # c("center", "scale") for z-score
-                , tuneLength = 20)
+                , tuneLength = 50)
 
 plot(knnFit)
 
@@ -159,7 +164,7 @@ knnFit2 <- train(HeartDiseaseorAttack ~ .
                  , data = train.data2
                  , method = "knn", trControl = ctrl
                  , preProcess = c("range") # c("center", "scale") for z-score
-                 , tuneLength = 20)
+                 , tuneLength = 50)
 
 plot(knnFit2)
 
@@ -185,7 +190,7 @@ knnFit3 <- train(HeartDiseaseorAttack ~ .
                  , data = train.data3
                  , method = "knn", trControl = ctrl2
                  , preProcess = c("range") # c("center", "scale") for z-score
-                 , tuneLength = 20)
+                 , tuneLength = 50)
 
 plot(knnFit3)
 
@@ -203,6 +208,7 @@ CrossTable(x = test.data3$HeartDiseaseorAttack, y = knnPredict3
 
 
 ## selection of 1500 samples of each factor of the dataset#
+set.seed(1)
 data_estratificada <- data %>%
   group_by(Sex) %>%
   sample_n(1500, replace = TRUE) %>%
@@ -223,7 +229,7 @@ knnFit <- train(Sex ~ .
                 , data = train.data
                 , method = "knn", trControl = ctrl
                 , preProcess = c("range") # c("center", "scale") for z-score
-                , tuneLength = 20)
+                , tuneLength = 50)
 
 plot(knnFit)
 
@@ -248,7 +254,7 @@ knnFit2 <- train(Sex ~ .
                  , data = train.data2
                  , method = "knn", trControl = ctrl
                  , preProcess = c("range") # c("center", "scale") for z-score
-                 , tuneLength = 20)
+                 , tuneLength = 50)
 
 plot(knnFit2)
 
@@ -273,7 +279,7 @@ knnFit3 <- train(Sex ~ .
                  , data = train.data3
                  , method = "knn", trControl = ctrl2
                  , preProcess = c("range") # c("center", "scale") for z-score
-                 , tuneLength = 20)
+                 , tuneLength = 50)
 
 plot(knnFit3)
 
@@ -420,7 +426,6 @@ model <- train(MentHlth ~ ., data = train.data3, method = "lm",
 print(model)
 
 #### Linear regression model PhysHlth ###################################################################################
-
 set.seed(1)
 data_estratificada3 <- data[sample(nrow(data), 3000), ]
 
@@ -437,7 +442,7 @@ summary(ins_model)
 
 # Train the model
 train.control <- trainControl(method = "cv", number = 10 )
-model <- train(MentHlth ~ ., data = train.data, method = "lm",
+model <- train(PhysHlth~ ., data = train.data, method = "lm",
                trControl = train.control)
 # Summarize the results
 print(model)
@@ -449,12 +454,12 @@ predictors_to_remove <- c("Sex", "Diabetes_012", "Education", "CholCheck", "Smok
 train.data2 <- train.data[, !(names(train.data) %in% predictors_to_remove)]
 test.data2 <- test.data[, !(names(test.data) %in% predictors_to_remove)]
 
-ins_model <- lm(MentHlth ~ ., data = train.data2)
+ins_model <- lm(PhysHlth ~ ., data = train.data2)
 summary(ins_model)
 
 # Train the model
 train.control <- trainControl(method = "cv", number = 5)
-model <- train(MentHlth ~ ., data = train.data2, method = "lm",
+model <- train(PhysHlth ~ ., data = train.data2, method = "lm",
                trControl = train.control)
 # Summarize the results
 print(model)
@@ -466,12 +471,12 @@ predictors_to_remove <- c("BMI", "HeartDiseaseorAttack", "PhysActivity", "Veggie
 train.data3 <- train.data2[, !(names(train.data2) %in% predictors_to_remove)]
 test.data3 <- test.data2[, !(names(test.data2) %in% predictors_to_remove)]
 
-ins_model <- lm(MentHlth ~ ., data = train.data3)
+ins_model <- lm(PhysHlth ~ ., data = train.data3)
 summary(ins_model)
 
 # Train the model
 train.control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
-model <- train(MentHlth ~ ., data = train.data3, method = "lm",
+model <- train(PhysHlth ~ ., data = train.data3, method = "lm",
                trControl = train.control)
 # Summarize the results
 print(model)
